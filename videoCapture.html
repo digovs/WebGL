@@ -1,0 +1,114 @@
+<html>
+
+<head>
+<title>MATA65 - Computação Gráfica</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+<script id="shader-vs" type="x-shader/x-vertex">
+	attribute vec3 aVertexPosition;
+	attribute vec2 aVertexTexture;
+		
+	varying vec2 vTextureCoord;
+	
+	void main(void) {
+		gl_Position = vec4(aVertexPosition, 1.0);
+		vTextureCoord = aVertexTexture;
+	}
+</script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+	precision mediump float;
+		
+	uniform sampler2D uSampler;
+	uniform vec2 vTextureSize;
+	uniform int functionId;
+	uniform float kernel[9];
+
+	uniform float brightValue;
+	
+	varying vec2 vTextureCoord;
+
+	// function IDs
+	uniform int brightFunction;
+	uniform int kernelFunction;
+		
+	void main(void) {
+		vec4 c = texture2D(uSampler, vTextureCoord);
+
+		if (functionId == brightFunction) {
+			gl_FragColor = vec4(c.r+brightValue, c.g+brightValue, c.b+brightValue, 1.0);
+		}
+		else if(functionId == kernelFunction) {
+			vec2 onePixel = vec2(1.0, 1.0) / vTextureSize;
+		    vec4 colorSum =
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2(-1, -1)) * kernel[0] +
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2( 0, -1)) * kernel[1] +
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2( 1, -1)) * kernel[2] +
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2(-1,  0)) * kernel[3] +
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2( 0,  0)) * kernel[4] +
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2( 1,  0)) * kernel[5] +
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2(-1,  1)) * kernel[6] +
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2( 0,  1)) * kernel[7] +
+		     texture2D(uSampler, vTextureCoord + onePixel * vec2( 1,  1)) * kernel[8] ;
+
+		    float kernelWeight =
+		     kernel[0] +
+		     kernel[1] +
+		     kernel[2] +
+		     kernel[3] +
+		     kernel[4] +
+		     kernel[5] +
+		     kernel[6] +
+		     kernel[7] +
+		     kernel[8] ;
+
+		    if (kernelWeight <= 0.0) {
+		      kernelWeight = 1.0;
+		    }
+
+		    gl_FragColor = vec4((colorSum / kernelWeight).rgb, 1.0);
+		}
+		
+		
+
+
+		
+	}
+</script>
+
+<script type="text/javascript" src="lib/webgl-utils.js"></script>
+<script type="text/javascript" src="lib/shaders.js"></script>
+<script type="text/javascript" src="videoCapture.js"></script>
+
+</head>
+
+<body onload="webGLStart();" style="width:800px; height:500px">
+    <h1>Trabalho</h1><br />
+    <p>Captura e manipulação de video em WebGL.</p>
+    <br/>
+    <div class="controllers">
+    	<div class="cBright" style="float:left">
+    		<div id="brightOutput">Bright Value = 1.0 </div>
+	    	<input type="range" id="brightValue" min="-1.0" max="1.0" step="0.05" value="0" onchange="changeBright(this.value)" oninput="changeBright(this.value)">
+    	</div>
+	    
+	    <div class="cContrast" style="float:left">
+		    <div id="contrastOutput">Contrast Value = 30 </div>
+		    <input type="range" id="contrastValue" min="3" max="30" step="1" value="30" onchange="changeContrast(this.value)" oninput="changeContrast(this.value)">
+		</div>
+	    
+		<div class="cSharpen" style="float:left">
+			<div id="sharpenOutput">Sharpen Value = 5 </div>
+	    	<input type="range" id="sharpenValue" min="1" max="15" step="0.2" value="5" onchange="changeSharpen(this.value)" oninput="changeSharpen(this.value)">
+		</div>
+	    
+	</div>
+	<div class="videoContainer" style="float:left">
+		<canvas id="videoGL" width="320" height="240" style="visibility: visible;"></canvas>
+		<video id="monitor" autoplay width="320" height="240" style="visibility: visible;"></video>
+		<canvas id="videoImage" width="256" height="256" style="visibility: hidden;"></canvas>
+	</div>
+	
+</body>
+
+</html>
