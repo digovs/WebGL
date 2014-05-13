@@ -2,6 +2,10 @@ var vertPosBuf;
 var vertTextBuf;
 var gl;
 var shader;
+var flipYLocation;
+var resolutionLocation;
+var kernelLocation;
+var kernels;
 
 var video, videoImage, videoImageContext, videoTexture;
 
@@ -9,7 +13,8 @@ var actualFunction = 0;
 var kernelFunction = 0;
 var brightFunction = 1;
 var contrastFunction = 2;
-var sharpenFunction = 3;
+var saturationFunction = 4;
+var unsharpFunction = 3;
 var actualParameter = 0;
 
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -37,12 +42,22 @@ function changeContrast(cValue) {
 
 // ********************************************************
 // ********************************************************
+function changeSaturation(satValue) {
+	var text = document.getElementById("saturationOutput");
+	text.innerHTML = "Saturation Value = " + satValue;
+	actualFunction = saturationFunction;
+	actualParameter = satValue;
+	drawScene(gl, shader, saturationFunction, satValue);
+}
+
+// ********************************************************
+// ********************************************************
 function changeSharpen(sValue) {
 	var text = document.getElementById("sharpenOutput");
 	text.innerHTML = "Sharpen Value = " + sValue;
-	actualFunction = sharpenFunction;
+	actualFunction = unsharpFunction;
 	actualParameter = sValue;
-	drawScene(gl, shader, sharpenFunction, sValue);
+	drawScene(gl, shader, unsharpFunction, sValue);
 }
 
 // ********************************************************
@@ -152,7 +167,7 @@ function drawScene(gl, shader, functionId, param) {
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoImage);
 	videoTexture.needsUpdate = false;
 
-	gl.uniform2f(shader.vTextureSize, videoImage.width, videoImage.height);
+	gl.uniform2f(shader.vTextureSize, gl.viewportWidth, gl.viewportHeight);
 
 	gl.uniform1i(shader.SamplerUniform, 0);
 	
@@ -164,25 +179,24 @@ function drawScene(gl, shader, functionId, param) {
    			break;
 
    		case contrastFunction:
-   			var filter = [
-		 		-1, -1, -1,
-		    	-1,  param, -1,
-		    	-1, -1, -1
-			];
-			gl.uniform1i(shader.functionId, kernelFunction);
-			gl.uniform1i(shader.kernelFunctionId, kernelFunction);
-			gl.uniform1fv(shader.kernel, filter);
+			gl.uniform1i(shader.functionId, contrastFunction);
+			gl.uniform1i(shader.contrastFunctionId, contrastFunction);
+			gl.uniform1f(shader.contrastValue, param);
 			break;
 
-		case sharpenFunction:
-   			var filter = [
-		 		-2, -1,  0,
-     			-1,  9,  1,
-     			 0,  1,  2
-			];
-			gl.uniform1i(shader.functionId, kernelFunction);
-			gl.uniform1i(shader.kernelFunctionId, kernelFunction);
-			gl.uniform1fv(shader.kernel, filter);
+		case saturationFunction:
+			gl.uniform1i(shader.functionId, saturationFunction);
+			gl.uniform1i(shader.saturationFunctionId, saturationFunction);
+			gl.uniform1f(shader.saturationValue, param);
+			break;
+
+		case unsharpFunction:
+			gl.uniform1i(shader.functionId, unsharpFunction);
+			var kernel = 
+				[-1, -1, -1,
+				 -1,  9, -1,
+				 -1, -1, -1];
+			gl.uniform1fv(shader.kernel, kernel);
 			break;
    	}
 
@@ -223,7 +237,7 @@ function webGLStart() {
 	videoImage = document.getElementById("videoImage");
 	videoImageContext = videoImage.getContext("2d");
 	
-	// background color if no video present
+	// background c if no video present
 	videoImageContext.fillStyle = "#000000";
 	videoImageContext.fillRect( 0, 0, videoImage.width, videoImage.height );
 	
@@ -251,7 +265,14 @@ function webGLStart() {
 	shader.functionId				= gl.getUniformLocation(shader, "functionId");
 
 	shader.brightFunctionId			= gl.getUniformLocation(shader, "brightFunction");
-	shader.kernelFunctionId			= gl.getUniformLocation(shader, "kernelFunction");
+	shader.contrastFunctionId		= gl.getUniformLocation(shader, "contrastFunction");
+	shader.contrastValue			= gl.getUniformLocation(shader, "contrastValue");
+	shader.saturationFunctionId		= gl.getUniformLocation(shader, "saturationFunction");
+	shader.saturationValue 			= gl.getUniformLocation(shader, "saturation");
+	shader.unsharpFunctionId		= gl.getUniformLocation(shader, "unsharpFunction");
+	shader.unsharpValue				= gl.getUniformLocation(shader, "unsharpValue");
+
+	kernelLocation					= gl.getUniformLocation(shader, "kernel[0]");
 
 	if ( 	(shader.vertexPositionAttribute < 0) ||
 			(shader.vertexTextAttribute < 0) ||

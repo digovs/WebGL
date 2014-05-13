@@ -9,6 +9,9 @@
 	attribute vec2 aVertexTexture;
 		
 	varying vec2 vTextureCoord;
+
+	uniform float u_flipY;
+	uniform vec2 u_resolution;
 	
 	void main(void) {
 		gl_Position = vec4(aVertexPosition, 1.0);
@@ -24,13 +27,23 @@
 	uniform int functionId;
 	uniform float kernel[9];
 
-	uniform float brightValue;
+	
 	
 	varying vec2 vTextureCoord;
 
+    
+
 	// function IDs
 	uniform int brightFunction;
-	uniform int kernelFunction;
+	uniform float brightValue;
+
+	uniform int contrastFunction;
+	uniform float contrastValue;
+
+	uniform int saturationFunction;
+	uniform float saturation;
+
+	uniform int unsharpFunction;
 		
 	void main(void) {
 		vec4 c = texture2D(uSampler, vTextureCoord);
@@ -38,9 +51,27 @@
 		if (functionId == brightFunction) {
 			gl_FragColor = vec4(c.r+brightValue, c.g+brightValue, c.b+brightValue, 1.0);
 		}
-		else if(functionId == kernelFunction) {
+		else if (functionId == contrastFunction) {
+			if (contrastValue > 0.0) {  
+			    c.rgb = (c.rgb - 0.5) / (1.0 - contrastValue) + 0.5;
+            } else {
+                c.rgb = (c.rgb - 0.5) * (1.0 + contrastValue) + 0.5;
+            }
+            gl_FragColor = c;
+		}
+		else if (functionId == saturationFunction) {
+            float average = (c.r + c.g + c.b) / 3.0;
+            if (saturation > 0.0) {
+                c.rgb += (average - c.rgb) * (1.0 - 1.0 / (1.001 - saturation));
+            } else {
+                c.rgb += (average - c.rgb) * (-saturation);
+            }
+            
+            gl_FragColor = c;
+		}
+		else if(functionId == unsharpFunction) {
 			vec2 onePixel = vec2(1.0, 1.0) / vTextureSize;
-		    vec4 colorSum =
+		    vec4 cSum =
 		     texture2D(uSampler, vTextureCoord + onePixel * vec2(-1, -1)) * kernel[0] +
 		     texture2D(uSampler, vTextureCoord + onePixel * vec2( 0, -1)) * kernel[1] +
 		     texture2D(uSampler, vTextureCoord + onePixel * vec2( 1, -1)) * kernel[2] +
@@ -66,7 +97,7 @@
 		      kernelWeight = 1.0;
 		    }
 
-		    gl_FragColor = vec4((colorSum / kernelWeight).rgb, 1.0);
+		    gl_FragColor = vec4((cSum / kernelWeight).rgb, 1.0);
 		}
 		
 		
@@ -88,13 +119,18 @@
     <br/>
     <div class="controllers">
     	<div class="cBright" style="float:left">
-    		<div id="brightOutput">Bright Value = 1.0 </div>
+    		<div id="brightOutput">Bright Value = 0 </div>
 	    	<input type="range" id="brightValue" min="-1.0" max="1.0" step="0.05" value="0" onchange="changeBright(this.value)" oninput="changeBright(this.value)">
     	</div>
 	    
 	    <div class="cContrast" style="float:left">
-		    <div id="contrastOutput">Contrast Value = 30 </div>
-		    <input type="range" id="contrastValue" min="3" max="30" step="1" value="30" onchange="changeContrast(this.value)" oninput="changeContrast(this.value)">
+		    <div id="contrastOutput">Contrast Value = 0 </div>
+		    <input type="range" id="contrastValue" min="-1" max="1" step="0.1" value="0" onchange="changeContrast(this.value)" oninput="changeContrast(this.value)">
+		</div>
+
+		<div class="cSaturation" style="float:left">
+		    <div id="saturationOutput">Saturation Value = 0 </div>
+		    <input type="range" id="saturationValue" min="-1" max="1" step="0.05" value="0" onchange="changeSaturation(this.value)" oninput="changeSaturation(this.value)">
 		</div>
 	    
 		<div class="cSharpen" style="float:left">
