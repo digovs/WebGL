@@ -2,32 +2,27 @@ var vertPosBuf;
 var vertTextBuf;
 var gl;
 var shader;
-var flipYLocation;
-var resolutionLocation;
-var kernelLocation;
-var kernels;
 
 var video, videoImage, videoImageContext, videoTexture;
 
-var actualFunction = 0;
-var kernelFunction = 0;
-var brightFunction = 1;
-var contrastFunction = 2;
-var saturationFunction = 4;
-var unsharpFunction = 3;
-var actualParameter = 0;
+// default values
+var brightValue = 0;
+var contrastValue = 0;
+var saturationValue = 0;
+var kernel = [0, 0, 0,
+			  0, 1, 0,
+			  0, 0, 0];
 
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 window.URL = window.URL || window.webkitURL;
 
 // ********************************************************
+// ************   FIRST QUESTION BEGIN   ******************
 // ********************************************************
 function changeBright(bValue) {
 	var text = document.getElementById("brightOutput");
 	text.innerHTML = "Bright Value = " + bValue;
-	actualFunction = brightFunction;
-	actualParameter = bValue;
-	drawScene(gl, shader, brightFunction, bValue);
+	brightValue = bValue;
 }
 
 // ********************************************************
@@ -35,9 +30,7 @@ function changeBright(bValue) {
 function changeContrast(cValue) {
 	var text = document.getElementById("contrastOutput");
 	text.innerHTML = "Contrast Value = " + cValue;
-	actualFunction = contrastFunction;
-	actualParameter = cValue;
-	drawScene(gl, shader, contrastFunction, cValue);
+	contrastValue = cValue;
 }
 
 // ********************************************************
@@ -45,9 +38,7 @@ function changeContrast(cValue) {
 function changeSaturation(satValue) {
 	var text = document.getElementById("saturationOutput");
 	text.innerHTML = "Saturation Value = " + satValue;
-	actualFunction = saturationFunction;
-	actualParameter = satValue;
-	drawScene(gl, shader, saturationFunction, satValue);
+	saturationValue = satValue;
 }
 
 // ********************************************************
@@ -55,12 +46,28 @@ function changeSaturation(satValue) {
 function changeSharpen(sValue) {
 	var text = document.getElementById("sharpenOutput");
 	text.innerHTML = "Sharpen Value = " + sValue;
-	actualFunction = unsharpFunction;
-	actualParameter = sValue;
-	drawScene(gl, shader, unsharpFunction, sValue);
+	if (sValue == 0) {
+		kernel = [0, 0, 0,
+			  	  0, 1, 0,
+			  	  0, 0, 0];
+	} 
+	else if (sValue > 0) {
+		kernel = [0,    -1,    0,
+				 -1,  sValue, -1,
+				  0,    -1,    0];
+	}
 }
 
 // ********************************************************
+// ********************************************************
+function reset() {
+	changeBright(0);
+	changeContrast(0);
+	changeSaturation(0);
+	changeSharpen(0);
+}
+// ********************************************************
+// ************   FIRST QUESTION END   ********************
 // ********************************************************
 function gotStream(stream)  {
 	if (window.URL) {   
@@ -153,7 +160,7 @@ var vTex = new Array;
 
 // ********************************************************
 // ********************************************************
-function drawScene(gl, shader, functionId, param) {
+function drawScene(gl, shader) {
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	
@@ -171,35 +178,12 @@ function drawScene(gl, shader, functionId, param) {
 
 	gl.uniform1i(shader.SamplerUniform, 0);
 	
-	switch (functionId) {
-   		case brightFunction:
-   			gl.uniform1i(shader.functionId, brightFunction);
-   			gl.uniform1i(shader.brightFunctionId, brightFunction);
-   			gl.uniform1f(shader.brightValue, param);
-   			break;
-
-   		case contrastFunction:
-			gl.uniform1i(shader.functionId, contrastFunction);
-			gl.uniform1i(shader.contrastFunctionId, contrastFunction);
-			gl.uniform1f(shader.contrastValue, param);
-			break;
-
-		case saturationFunction:
-			gl.uniform1i(shader.functionId, saturationFunction);
-			gl.uniform1i(shader.saturationFunctionId, saturationFunction);
-			gl.uniform1f(shader.saturationValue, param);
-			break;
-
-		case unsharpFunction:
-			gl.uniform1i(shader.functionId, unsharpFunction);
-			var kernel = 
-				[-1, -1, -1,
-				 -1,  9, -1,
-				 -1, -1, -1];
-			gl.uniform1fv(shader.kernel, kernel);
-			break;
-   	}
-
+	// APPLY USER VALUES
+	gl.uniform1f(shader.brightValue, brightValue);
+	gl.uniform1f(shader.contrastValue, contrastValue);
+	gl.uniform1f(shader.saturationValue, saturationValue);
+	gl.uniform1fv(shader.kernel, kernel);
+			
 	gl.enableVertexAttribArray(shader.vertexPositionAttribute);
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertPosBuf);
 	gl.vertexAttribPointer(shader.vertexPositionAttribute, vertPosBuf.itemSize, gl.FLOAT, false, 0, 0);
@@ -259,20 +243,13 @@ function webGLStart() {
 	shader.vertexPositionAttribute 	= gl.getAttribLocation(shader, "aVertexPosition");
 	shader.vertexTextAttribute 		= gl.getAttribLocation(shader, "aVertexTexture");
 	shader.SamplerUniform	 		= gl.getUniformLocation(shader, "uSampler");
+
 	shader.brightValue				= gl.getUniformLocation(shader, "brightValue");
-	shader.textureSize				= gl.getUniformLocation(shader, "vTextureSize");
-	shader.kernel					= gl.getUniformLocation(shader, "kernel");
-	shader.functionId				= gl.getUniformLocation(shader, "functionId");
-
-	shader.brightFunctionId			= gl.getUniformLocation(shader, "brightFunction");
-	shader.contrastFunctionId		= gl.getUniformLocation(shader, "contrastFunction");
 	shader.contrastValue			= gl.getUniformLocation(shader, "contrastValue");
-	shader.saturationFunctionId		= gl.getUniformLocation(shader, "saturationFunction");
-	shader.saturationValue 			= gl.getUniformLocation(shader, "saturation");
-	shader.unsharpFunctionId		= gl.getUniformLocation(shader, "unsharpFunction");
-	shader.unsharpValue				= gl.getUniformLocation(shader, "unsharpValue");
+	shader.saturationValue 			= gl.getUniformLocation(shader, "saturationValue");
 
-	kernelLocation					= gl.getUniformLocation(shader, "kernel[0]");
+	shader.vTextureSize				= gl.getUniformLocation(shader, "vTextureSize");
+	shader.kernel					= gl.getUniformLocation(shader, "kernel[0]");
 
 	if ( 	(shader.vertexPositionAttribute < 0) ||
 			(shader.vertexTextAttribute < 0) ||
@@ -298,7 +275,7 @@ function render() {
 		videoTexture.needsUpdate = true;
 
 	}
-	drawScene(gl, shader, actualFunction, actualParameter);
+	drawScene(gl, shader);
 }
 
 
