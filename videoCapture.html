@@ -31,11 +31,12 @@
 	uniform float contrastValue;
 	uniform float saturationValue;
 
+	uniform int warholSelected;
+	uniform int warholColors;
+
 	void main(void) {
 		vec4 color = texture2D(uSampler, vTextureCoord);
 
-		
-        
         // apply unsharpen mask to have better distinctness
 		vec2 onePixel = vec2(1.0, 1.0) / vTextureSize;
 	    vec4 cSum =
@@ -75,13 +76,25 @@
         } else if (contrastValue < 0.0) {
             color.rgb = (color.rgb - 0.5) * (1.0 + contrastValue) + 0.5;
         }
-		
+
 		// apply saturation
         float average = (color.r + color.g + color.b) / 3.0;
         if (saturationValue > 0.0) {
             color.rgb += (average - color.rgb) * (1.0 - 1.0 / (1.001 - saturationValue));
         } else if (saturationValue < 0.0){
             color.rgb += (average - color.rgb) * (-saturationValue);
+        }
+
+        // change warhol colors
+        if (warholSelected == 1) {
+			if (warholColors == 0)
+				color.rgb = color.gbr;
+			else if (warholColors == 1)
+				color.rgb = color.rbg;
+			else if (warholColors == 2)
+				color.rgb = color.grb;
+			else
+				color.rgb = color.bgr;
         }
 
 	    gl_FragColor = color;
@@ -118,6 +131,10 @@
 		<div class="cSharpen" style="float:left">
 			<div id="sharpenOutput">Sharpen Value = 0 </div>
 	    	<input type="range" id="sharpenValue" min="4.1" max="5" step="0.005" value="8" onchange="changeSharpen(this.value)" oninput="changeSharpen(this.value)">
+		</div>
+
+		<div>
+			<input type="button" id="warholButton" value="Apply Warhol" onClick="checkWarhol()">
 		</div>
 
 		<div class="resetButton">

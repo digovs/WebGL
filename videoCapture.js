@@ -12,6 +12,7 @@ var saturationValue = 0;
 var kernel = [0, 0, 0,
 			  0, 1, 0,
 			  0, 0, 0];
+var warholSelected = false;
 
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 window.URL = window.URL || window.webkitURL;
@@ -60,6 +61,18 @@ function changeSharpen(sValue) {
 
 // ********************************************************
 // ********************************************************
+
+function checkWarhol() {
+	 if (warholSelected) {
+	 	document.getElementById('warholButton').value = "Apply Warhol";
+	 	warholSelected = false;
+
+	 }
+	 else{
+	 	document.getElementById('warholButton').value = "Reset Warhol";
+		warholSelected = true;
+	}
+}
 function reset() {
 	changeBright(0);
 	changeContrast(0);
@@ -161,7 +174,7 @@ var vTex = new Array;
 // ********************************************************
 // ********************************************************
 function drawScene(gl, shader) {
-	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+	
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	
 	if (!videoTexture.needsUpdate) 
@@ -169,13 +182,14 @@ function drawScene(gl, shader) {
 	
    	gl.useProgram(shader);
 
+	
+
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, videoTexture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoImage);
 	videoTexture.needsUpdate = false;
 
 	gl.uniform2f(shader.vTextureSize, gl.viewportWidth, gl.viewportHeight);
-
 	gl.uniform1i(shader.SamplerUniform, 0);
 	
 	// APPLY USER VALUES
@@ -183,6 +197,7 @@ function drawScene(gl, shader) {
 	gl.uniform1f(shader.contrastValue, contrastValue);
 	gl.uniform1f(shader.saturationValue, saturationValue);
 	gl.uniform1fv(shader.kernel, kernel);
+
 			
 	gl.enableVertexAttribArray(shader.vertexPositionAttribute);
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertPosBuf);
@@ -192,7 +207,31 @@ function drawScene(gl, shader) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertTextBuf);
 	gl.vertexAttribPointer(shader.vertexTextAttribute, vertTextBuf.itemSize, gl.FLOAT, false, 0, 0);
 
-	gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
+	if (warholSelected == true) {
+		gl.uniform1f(shader.saturationValue, 0.95);
+		gl.uniform1i(shader.warholSelected, 1);
+		gl.viewport(0, 0, gl.viewportWidth/2.0, gl.viewportHeight/2.0);
+		gl.uniform1i(shader.warholColors, 0);
+		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
+
+		gl.viewport(0, gl.viewportHeight/2.0, gl.viewportWidth/2.0, gl.viewportHeight/2.0);
+		gl.uniform1i(shader.warholColors, 1);
+		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
+
+		gl.viewport(gl.viewportWidth/2.0, 0, gl.viewportWidth/2.0, gl.viewportHeight/2.0);
+		gl.uniform1i(shader.warholColors, 2);
+		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
+
+		gl.viewport(gl.viewportWidth/2.0, gl.viewportHeight/2.0, gl.viewportWidth/2.0, gl.viewportHeight/2.0);
+		gl.uniform1i(shader.warholColors, 3);
+		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
+		
+	} else {
+		gl.uniform1i(shader.warholSelected, 0);
+		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
+	}
+	//
 }
 
 // ********************************************************
@@ -248,6 +287,8 @@ function webGLStart() {
 	shader.contrastValue			= gl.getUniformLocation(shader, "contrastValue");
 	shader.saturationValue 			= gl.getUniformLocation(shader, "saturationValue");
 
+	shader.warholColors 			= gl.getUniformLocation(shader, "warholColors");
+	shader.warholSelected 			= gl.getUniformLocation(shader, "warholSelected");
 	shader.vTextureSize				= gl.getUniformLocation(shader, "vTextureSize");
 	shader.kernel					= gl.getUniformLocation(shader, "kernel[0]");
 
