@@ -4,6 +4,7 @@ var gl;
 var shader;
 
 var video, videoImage, videoImageContext, videoTexture;
+var image;
 
 // default values
 var brightValue = 0;
@@ -13,6 +14,7 @@ var kernel = [0, 0, 0,
 			  0, 1, 0,
 			  0, 0, 0];
 var warholSelected = false;
+var background = 3;
 
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 window.URL = window.URL || window.webkitURL;
@@ -51,8 +53,7 @@ function changeSharpen(sValue) {
 		kernel = [0, 0, 0,
 			  	  0, 1, 0,
 			  	  0, 0, 0];
-	} 
-	else if (sValue > 0) {
+	} else if (sValue > 0) {
 		kernel = [0,    -1,    0,
 				 -1,  sValue, -1,
 				  0,    -1,    0];
@@ -64,30 +65,53 @@ function changeSharpen(sValue) {
 
 function checkWarhol() {
 	 if (warholSelected) {
-	 	document.getElementById('warholButton').value = "Apply Warhol";
+	 	document.getElementById('warholButton').value = "Apply Warhol's Effect";
 	 	warholSelected = false;
 
 	 }
 	 else{
-	 	document.getElementById('warholButton').value = "Reset Warhol";
+	 	document.getElementById('warholButton').value = "Disable Warhol's Effect";
 		warholSelected = true;
 	}
 }
+
+function applyChroma() {
+	var radioButtons = document.getElementsByName("color");
+	var checked;
+    for(var x = 0; x < radioButtons.length; x++) {
+     	if(radioButtons[x].checked) {
+      		checked = radioButtons[x].id; 
+       	}
+    }
+
+    if(checked == "colorR") {
+      	background = 0;
+    } else if(checked == "colorG") {
+       	background = 1;
+    } else if(checked == "colorB") {
+       	background = 2;
+    } else {
+       	background = 3;
+    }
+}
+
 function reset() {
 	changeBright(0);
 	changeContrast(0);
 	changeSaturation(0);
 	changeSharpen(0);
+	document.getElementById('warholButton').value = "Apply Warhol's Effect";
+	warholSelected = false;
 }
 // ********************************************************
 // ************   FIRST QUESTION END   ********************
 // ********************************************************
 function gotStream(stream)  {
 	if (window.URL) {   
-		video.src = window.URL.createObjectURL(stream);   } 
-	else {   
+		video.src = window.URL.createObjectURL(stream);   
+	} else {   
 		video.src = stream;   
-		}
+	}
 
 	video.onerror = function(e) {   
 							stream.stop();   
@@ -102,7 +126,7 @@ function noStream(e) {
 	
 	if (e.code == 1) {   
 		msg = "User denied access to use camera.";   
-		}
+	}
 	document.getElementById("output").textContent = msg;
 }
 
@@ -113,7 +137,7 @@ function initGL(canvas) {
 	var gl = canvas.getContext("webgl");
 	if (!gl) {
 		return (null);
-		}
+	}
 	
 	gl.viewportWidth 	= canvas.width;
 	gl.viewportHeight 	= canvas.height;
@@ -182,9 +206,7 @@ function drawScene(gl, shader) {
 	
    	gl.useProgram(shader);
 
-	
-
-	gl.activeTexture(gl.TEXTURE0);
+   	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, videoTexture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoImage);
 	videoTexture.needsUpdate = false;
@@ -208,7 +230,9 @@ function drawScene(gl, shader) {
 	gl.vertexAttribPointer(shader.vertexTextAttribute, vertTextBuf.itemSize, gl.FLOAT, false, 0, 0);
 
 	if (warholSelected == true) {
-		gl.uniform1f(shader.saturationValue, 0.95);
+		gl.uniform1f(shader.saturationValue, 0.85);
+		var text = document.getElementById("saturationOutput");
+		text.innerHTML = "Saturation Value = " + 0.85;
 		gl.uniform1i(shader.warholSelected, 1);
 		gl.viewport(0, 0, gl.viewportWidth/2.0, gl.viewportHeight/2.0);
 		gl.uniform1i(shader.warholColors, 0);
@@ -231,18 +255,20 @@ function drawScene(gl, shader) {
 		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
 	}
-	//
+
+	gl.uniform1i(shader.background,background);
 }
 
 // ********************************************************
 // ********************************************************
 function initTexture(gl, shader) {
 
-	videoTexture = gl.createTexture();		
+	videoTexture = gl.createTexture();	
+
 	gl.bindTexture(gl.TEXTURE_2D, videoTexture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	videoTexture.needsUpdate = false;
+	videoTexture.needsUpdate = false;	
 }
 
 // ********************************************************
@@ -252,7 +278,7 @@ function webGLStart() {
 	if (!navigator.getUserMedia) {
 		document.getElementById("output").innerHTML = 
 			"Sorry. <code>navigator.getUserMedia()</code> is not available.";
-		}
+	}
 	navigator.getUserMedia({video: true}, gotStream, noStream);
 
 	// assign variables to HTML elements
@@ -263,21 +289,20 @@ function webGLStart() {
 	// background c if no video present
 	videoImageContext.fillStyle = "#000000";
 	videoImageContext.fillRect( 0, 0, videoImage.width, videoImage.height );
-	
-	
+		
 	canvas = document.getElementById("videoGL");
 	gl = initGL(canvas);
 	
 	if (!gl) { 
 		alert("Could not initialise WebGL, sorry :-(");
 		return;
-		}
+	}
 		
 	shader = initShaders("shader", gl);
 	if (shader == null) {
 		alert("Erro na inicilizacao do shader!!");
 		return;
-		}
+	}
 
 	shader.vertexPositionAttribute 	= gl.getAttribLocation(shader, "aVertexPosition");
 	shader.vertexTextAttribute 		= gl.getAttribLocation(shader, "aVertexTexture");
@@ -292,12 +317,14 @@ function webGLStart() {
 	shader.vTextureSize				= gl.getUniformLocation(shader, "vTextureSize");
 	shader.kernel					= gl.getUniformLocation(shader, "kernel[0]");
 
-	if ( 	(shader.vertexPositionAttribute < 0) ||
+	shader.background				= gl.getUniformLocation(shader, "background");
+
+	if (	(shader.vertexPositionAttribute < 0) ||
 			(shader.vertexTextAttribute < 0) ||
 			(shader.SamplerUniform < 0) ) {
 		alert("Shader attribute ou uniform nao localizado!");
 		return;
-		}
+	}
 		
 	initBuffers(gl);
 	initTexture(gl, shader);
@@ -314,7 +341,6 @@ function render() {
 	if ( video.readyState === video.HAVE_ENOUGH_DATA ) {
 		videoImageContext.drawImage( video, 0, 0, videoImage.width, videoImage.height );
 		videoTexture.needsUpdate = true;
-
 	}
 	drawScene(gl, shader);
 }

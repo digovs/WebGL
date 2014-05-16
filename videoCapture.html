@@ -34,7 +34,10 @@
 	uniform int warholSelected;
 	uniform int warholColors;
 
+	uniform int background;
+
 	void main(void) {
+
 		vec4 color = texture2D(uSampler, vTextureCoord);
 
         // apply unsharpen mask to have better distinctness
@@ -97,8 +100,29 @@
 				color.rgb = color.bgr;
         }
 
-	    gl_FragColor = color;
-
+        // check background color
+	    if(background == 0) {
+	      	if ((color.r > 0.1) && (color.g < 0.1) && (color.b < 0.1)) {
+		    	gl_FragColor = vec4(color.r,color.g,color.b,0.0);
+		   	} else {
+		    	gl_FragColor = vec4(color.r,color.g,color.b,1.0);
+		    }
+    	} else if(background == 1) {
+	       	if ((color.r < 0.1) && (color.g > 0.1) && (color.b < 0.1)) {
+		    	gl_FragColor = vec4(color.r,color.g,color.b,0.0);
+		   	} else {
+		    	gl_FragColor = vec4(color.r,color.g,color.b,1.0);
+		    }
+    	} else if(background == 2) {
+	       	if ((color.r < 0.1) && (color.g < 0.1) && (color.b > 0.1)) {
+		    	gl_FragColor = vec4(color.r,color.g,color.b,0.0);
+		   	} else {
+		    	gl_FragColor = vec4(color.r,color.g,color.b,1.0);
+		    }
+    	} else {
+       		gl_FragColor = vec4(color.r,color.g,color.b,1.0);
+    	}
+	    
 	}
 </script>
 
@@ -109,42 +133,77 @@
 </head>
 
 <body onload="webGLStart();" style="width:800px; height:500px">
-    <h1>Trabalho</h1><br />
-    <p>Captura e manipulação de video em WebGL.</p>
-    <br/>
-    <div class="controllers">
-    	<div class="cBright" style="float:left">
-    		<div id="brightOutput">Bright Value = 0 </div>
-	    	<input type="range" id="brightValue" min="-1.0" max="1.0" step="0.05" value="0" onchange="changeBright(this.value)" oninput="changeBright(this.value)">
-    	</div>
-	    
-	    <div class="cContrast" style="float:left">
-		    <div id="contrastOutput">Contrast Value = 0 </div>
-		    <input type="range" id="contrastValue" min="-1" max="1" step="0.1" value="0" onchange="changeContrast(this.value)" oninput="changeContrast(this.value)">
-		</div>
+    <h1>MATA65 - Computação Gráfica - 2014.1</h1>
+    <h2>Trabalho Prático 1</h2>
+    <p>Captura e manipulação de video em WebGL/JavaScript/HTML5.</p>
+    <p>Alunos: Karla Malta Amorim da Silva e Rodrigo Vieira da Silva</p>
+    <br>
 
-		<div class="cSaturation" style="float:left">
-		    <div id="saturationOutput">Saturation Value = 0 </div>
-		    <input type="range" id="saturationValue" min="-1" max="1" step="0.05" value="0" onchange="changeSaturation(this.value)" oninput="changeSaturation(this.value)">
-		</div>
-	    
-		<div class="cSharpen" style="float:left">
-			<div id="sharpenOutput">Sharpen Value = 0 </div>
-	    	<input type="range" id="sharpenValue" min="4.1" max="5" step="0.005" value="8" onchange="changeSharpen(this.value)" oninput="changeSharpen(this.value)">
-		</div>
+    <table style="width:400px" bgcolor="#c0caff">
+    <tr>
+    	<td>
+    		<div class="cBright" style="float:left">
+    			<div id="brightOutput">Bright Value = 0 </div>
+	    		<input type="range" id="brightValue" min="-1.0" max="1.0" step="0.05" value="0" onchange="changeBright(this.value)" oninput="changeBright(this.value)">
+    		</div> 
+    	</td>
+    	<td>
+    		<div class="cContrast">
+		    	<div id="contrastOutput">Contrast Value = 0 </div>
+		    	<input type="range" id="contrastValue" min="-1" max="1" step="0.1" value="0" onchange="changeContrast(this.value)" oninput="changeContrast(this.value)">
+			</div>
+		</td>
+    </tr>
+    <tr>
+    	<td>
+    		<div class="cSaturation" style="float:left">
+		    	<div id="saturationOutput">Saturation Value = 0 </div>
+		    	<input type="range" id="saturationValue" min="-1" max="1" step="0.05" value="0" onchange="changeSaturation(this.value)" oninput="changeSaturation(this.value)">
+			</div>
+		</td>
+    	<td>
+    		<div class="cSharpen">
+				<div id="sharpenOutput">Sharpen Value = 0 </div>
+	    		<input type="range" id="sharpenValue" min="4.1" max="5" step="0.005" value="8" onchange="changeSharpen(this.value)" oninput="changeSharpen(this.value)">
+			</div>
+		</td>
+    </tr>
+     <tr>
+    	<td>
+    		<p><b>Andy Warhol's Effect: </b></p>
+    		<div>
+				<input type="button" id="warholButton" value="Apply Warhol's Effect" onClick="checkWarhol()">
+			</div>
+		</td>
+    </tr>
+    <tr>
+    	<td>
+    		<p><b>Chroma Key Effect: </p></b>
+    		<p>Select background color:</p>
+    		<form>
+				<input type="radio" id="colorR" name="color" 
+					value="red" onhaschange="applyChroma()">Red</input>
+				<input type="radio" id="colorG" name="color" 
+					value="green" onhaschange="applyChroma()">Green</input>
+				<input type="radio" id="colorB" name="color" 
+					value="blue" onhaschange="applyChroma()">Blue</input><br>
+				<input type="radio" id="colorD" name="color" 
+					value="disabled" onhaschange="applyChroma()">Disable Chroma Key Effect</input>
+			</form>
+		</td>
+    </tr>
+    <tr>
+    	<td>
+    		<p><b>Restore Original Image: </p></b>
+    		<div class="resetButton">
+				<input type="button" value="Reset Image" onclick="reset()">
+			</div>
+		</td>
+	</tr>
+	</table><br>
 
-		<div>
-			<input type="button" id="warholButton" value="Apply Warhol" onClick="checkWarhol()">
-		</div>
-
-		<div class="resetButton">
-			<input type="button" value="Reset" onclick="reset()">
-		</div>
-
-	    
-	</div>
 	<div class="videoContainer" style="float:left">
-		<canvas id="videoGL" width="320" height="240" style="visibility: visible;"></canvas>
+		<canvas style="background-image: url(images/image.jpg)" id="videoGL" width="320" height="240" style="visibility: visible;"></canvas> 
 		<video id="monitor" autoplay width="320" height="240" style="visibility: visible;"></video>
 		<canvas id="videoImage" width="256" height="256" style="visibility: hidden;"></canvas>
 	</div>
