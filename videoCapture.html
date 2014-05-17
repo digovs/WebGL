@@ -44,10 +44,8 @@
 
 		vec4 color = texture2D(uSampler, vTextureCoord);
 
-		// Questão 2- Transformação: Uma bolha de zoom in ou zoom out
-		// usuário pode escolher tamanho da bolha, posição e intensidade
-		// essa TEM QUE ser a primeira alteração, pois ela é a base para
-		// as outras. 
+		// Questão 2- Transformação: Uma bolha de zoom in ou zoom out.
+		// Usuário pode escolher tamanho da bolha, posição e intensidade
 		vec2 coord = vTextureCoord*vTextureSize;
 		coord -= centerVector;
         float distance = length(coord);
@@ -64,7 +62,13 @@
         coord = coord/vTextureSize;
         color = vec4(texture2D(uSampler, coord));
 
-        // apply unsharpen mask to have better distinctness
+        // Questão 1 - Melhoria de nitidez. Aplica uma marcara Sharp
+        // com a seguinte janela:
+        //		 [0,    -1,    0,
+		//		 -1,   valor, -1,
+		//		  0,    -1,    0];
+		// Onde o valor é controlado pelo usuário
+
 		vec2 onePixel = coord / vTextureSize;
 	    vec4 cSum =
 	     texture2D(uSampler, coord + onePixel * vec2(-1, -1)) * kernel[0] +
@@ -94,17 +98,19 @@
 
 	    color = vec4((cSum / kernelWeight).rgb, 1.0);
 
-	    // apply brightness
+	    // Questão 1 - Melhoria de brilho.
+	    // somamos o brightValue a todos os canais RGB
 		color.rgb += brightValue;
 
-		// apply contrast
+		// Questão 1 - Melhoria de contraste
 		if (contrastValue > 0.0) {  
 		    color.rgb = (color.rgb - 0.5) / (1.0 - contrastValue) + 0.5;
         } else if (contrastValue < 0.0) {
             color.rgb = (color.rgb - 0.5) * (1.0 + contrastValue) + 0.5;
         }
 
-		// apply saturation
+		// Questão 1 - Melhoria de saturação
+		// Através das fórmulas de conversão de RGB => HSL podemos alterar o S
         float average = (color.r + color.g + color.b) / 3.0;
         if (saturationValue > 0.0) {
             color.rgb += (average - color.rgb) * (1.0 - 1.0 / (1.001 - saturationValue));
@@ -112,7 +118,8 @@
             color.rgb += (average - color.rgb) * (-saturationValue);
         }
 
-        // change warhol colors
+        // Questão 4 - Efeito Andy Warhol
+        // trocamos os canais R,G e B entre eles para conseguir um resultado bacana
         if (warholSelected == 1) {
 			if (warholColors == 0)
 				color.rgb = color.gbr;
@@ -124,7 +131,9 @@
 				color.rgb = color.bgr;
         }
 
-        // apply chroma key
+        // Questão 3 - Chroma key
+        // descobrimos as variações do vermelho e do azul escuro e assim aplicamos
+        // um alpha = 0 para transparecer a imagem que está por trás
 	    if(background == 0) {
 	      	if ((color.r > 0.2) && (color.g < 0.1) && (color.b < 0.1)) {
 		    	gl_FragColor = vec4(color.r,color.g,color.b,0.0);

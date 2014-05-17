@@ -84,7 +84,7 @@ function checkWarhol() {
 }
 
 // ********************************************************
-// ******************QUESTÃO 3 CHROMA KEY***************
+// ******************QUESTÃO 3 CHROMA KEY******************
 // ********************************************************
 
 function applyChroma() {
@@ -132,6 +132,9 @@ function changeCenterY(sValue){
 	centerYValue = sValue;
 }
 
+
+// *******************************************************
+// *******************************************************
 function reset() {
 	changeBright(0);
 	changeContrast(0);
@@ -269,6 +272,9 @@ function drawScene(gl, shader) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertTextBuf);
 	gl.vertexAttribPointer(shader.vertexTextAttribute, vertTextBuf.itemSize, gl.FLOAT, false, 0, 0);
 
+	// Na aplicação do efeito Andy Warhol, temos que dividir a imagem em
+	// 4 imagens menores e aplicar uma saturação para o resultado ficar mais
+	// artístico
 	if (warholSelected == true) {
 		gl.uniform1f(shader.saturationValue, 0.85);
 		var text = document.getElementById("saturationOutput");
@@ -297,6 +303,7 @@ function drawScene(gl, shader) {
 		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
 	}
 
+	// Valores de controle da transformação 
 	gl.uniform1f(shader.strengthValue, strengthValue);
 	gl.uniform1f(shader.radiusValue, radiusValue);
 	gl.uniform2f(shader.centerVector, centerXValue, centerYValue);
