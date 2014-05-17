@@ -13,8 +13,15 @@ var saturationValue = 0;
 var kernel = [0, 0, 0,
 			  0, 1, 0,
 			  0, 0, 0];
+			  
 var warholSelected = false;
-var background = 3;
+
+var radiusValue = 0;
+var strengthValue = 0;
+var centerXValue = 120;
+var centerYValue = 160;
+
+var background = 2;
 
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 window.URL = window.URL || window.webkitURL;
@@ -61,6 +68,7 @@ function changeSharpen(sValue) {
 }
 
 // ********************************************************
+// ******************QUESTÂO 4 ANDY WARHOL*****************
 // ********************************************************
 
 function checkWarhol() {
@@ -75,6 +83,10 @@ function checkWarhol() {
 	}
 }
 
+// ********************************************************
+// ******************QUESTÂO 3 CHROMA KEY***************
+// ********************************************************
+
 function applyChroma() {
 	var radioButtons = document.getElementsByName("color");
 	var checked;
@@ -86,13 +98,38 @@ function applyChroma() {
 
     if(checked == "colorR") {
       	background = 0;
-    } else if(checked == "colorG") {
-       	background = 1;
     } else if(checked == "colorB") {
-       	background = 2;
+       	background = 1;
     } else {
-       	background = 3;
+       	background = 2;
     }
+}
+
+// ********************************************************
+// ******************QUESTÂO 2 TRANSFORMAÇÂO***************
+// ********************************************************
+function changeStrength(sValue){
+	var text = document.getElementById("strengthOutput");
+	text.innerHTML = "strength Value = " + sValue;
+	strengthValue = sValue;
+}
+
+function changeRadius(sValue){
+	var text = document.getElementById("radiusOutput");
+	text.innerHTML = "Radius Value = " + sValue;
+	radiusValue = sValue;
+}
+
+function changeCenterX(sValue){
+	var text = document.getElementById("centerXOutput");
+	text.innerHTML = "CenterX Value = " + sValue;
+	centerXValue = sValue;
+}
+
+function changeCenterY(sValue){
+	var text = document.getElementById("centerYOutput");
+	text.innerHTML = "centerY Value = " + sValue;
+	centerYValue = sValue;
 }
 
 function reset() {
@@ -102,10 +139,11 @@ function reset() {
 	changeSharpen(0);
 	document.getElementById('warholButton').value = "Apply Warhol's Effect";
 	warholSelected = false;
+	background = 2;
+	var rb = document.getElementById("colorD");
+	rb.checked = true;
 }
-// ********************************************************
-// ************   FIRST QUESTION END   ********************
-// ********************************************************
+
 function gotStream(stream)  {
 	if (window.URL) {   
 		video.src = window.URL.createObjectURL(stream);   
@@ -256,6 +294,10 @@ function drawScene(gl, shader) {
 		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
 	}
 
+	gl.uniform1f(shader.strengthValue, strengthValue);
+	gl.uniform1f(shader.radiusValue, radiusValue);
+	gl.uniform2f(shader.centerVector, centerXValue, centerYValue);
+
 	gl.uniform1i(shader.background,background);
 }
 
@@ -311,6 +353,10 @@ function webGLStart() {
 	shader.brightValue				= gl.getUniformLocation(shader, "brightValue");
 	shader.contrastValue			= gl.getUniformLocation(shader, "contrastValue");
 	shader.saturationValue 			= gl.getUniformLocation(shader, "saturationValue");
+
+	shader.radiusValue				= gl.getUniformLocation(shader, "radiusValue");
+	shader.strengthValue			= gl.getUniformLocation(shader, "strengthValue");
+	shader.centerVector				= gl.getUniformLocation(shader, "centerVector");
 
 	shader.warholColors 			= gl.getUniformLocation(shader, "warholColors");
 	shader.warholSelected 			= gl.getUniformLocation(shader, "warholSelected");
