@@ -27,7 +27,7 @@ navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia 
 window.URL = window.URL || window.webkitURL;
 
 // ********************************************************
-// ************   FIRST QUESTION BEGIN   ******************
+// ****************QUESTÃO 1 *****************************
 // ********************************************************
 function changeBright(bValue) {
 	var text = document.getElementById("brightOutput");
@@ -68,7 +68,7 @@ function changeSharpen(sValue) {
 }
 
 // ********************************************************
-// ******************QUESTÂO 4 ANDY WARHOL*****************
+// ******************QUESTÃO 4 ANDY WARHOL*****************
 // ********************************************************
 
 function checkWarhol() {
@@ -84,7 +84,7 @@ function checkWarhol() {
 }
 
 // ********************************************************
-// ******************QUESTÂO 3 CHROMA KEY***************
+// ******************QUESTÃO 3 CHROMA KEY***************
 // ********************************************************
 
 function applyChroma() {
@@ -106,11 +106,11 @@ function applyChroma() {
 }
 
 // ********************************************************
-// ******************QUESTÂO 2 TRANSFORMAÇÂO***************
+// ******************QUESTÃO 2 TRANSFORMAÇÂO***************
 // ********************************************************
 function changeStrength(sValue){
 	var text = document.getElementById("strengthOutput");
-	text.innerHTML = "strength Value = " + sValue;
+	text.innerHTML = "Strength Value = " + sValue;
 	strengthValue = sValue;
 }
 
@@ -128,7 +128,7 @@ function changeCenterX(sValue){
 
 function changeCenterY(sValue){
 	var text = document.getElementById("centerYOutput");
-	text.innerHTML = "centerY Value = " + sValue;
+	text.innerHTML = "CenterY Value = " + sValue;
 	centerYValue = sValue;
 }
 
