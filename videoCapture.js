@@ -142,6 +142,8 @@ function reset() {
 	background = 2;
 	var rb = document.getElementById("colorD");
 	rb.checked = true;
+	strengthValue = 0;
+	radiusValue = 0;
 }
 
 function gotStream(stream)  {
@@ -290,6 +292,7 @@ function drawScene(gl, shader) {
 		
 	} else {
 		gl.uniform1i(shader.warholSelected, 0);
+		
 		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 		gl.drawArrays(gl.TRIANGLES, 0, vertPosBuf.numItems);
 	}
@@ -297,7 +300,6 @@ function drawScene(gl, shader) {
 	gl.uniform1f(shader.strengthValue, strengthValue);
 	gl.uniform1f(shader.radiusValue, radiusValue);
 	gl.uniform2f(shader.centerVector, centerXValue, centerYValue);
-
 	gl.uniform1i(shader.background,background);
 }
 
